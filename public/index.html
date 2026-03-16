@@ -1,136 +1,47 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Smart Switch</title>
-<style>
-body{
-  margin:0;
-  font-family:Segoe UI,sans-serif;
-  background:linear-gradient(135deg,#141e30,#243b55);
-  color:white;
-}
-.container{
-  max-width:420px;
-  margin:auto;
-  padding:20px;
-}
-h1{
-  text-align:center;
-  margin-bottom:25px;
-}
-.card{
-  background:rgba(255,255,255,0.12);
-  backdrop-filter:blur(10px);
-  border-radius:15px;
-  padding:15px;
-  margin-bottom:15px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  box-shadow:0 10px 30px rgba(0,0,0,.3);
-}
-.switch{
-  display:flex;
-  align-items:center;
-}
-.status{
-  font-weight:bold;
-  margin-right:12px;
-}
-.on{color:#00e676;}
-.off{color:#ff5252;}
-button{
-  border:none;
-  padding:8px 16px;
-  border-radius:20px;
-  font-weight:bold;
-  cursor:pointer;
-}
-.btn-on{background:#00e676;}
-.btn-off{background:#ff5252;color:#fff;}
-.footer{
-  text-align:center;
-  opacity:.6;
-  margin-top:20px;
-  font-size:12px;
-}
-</style>
+  <title>Smart Switch Dashboard</title>
+  <meta name="viewport" content="width=device-width">
+  <style>
+    body{font-family:system-ui;background:#1a1a2e;color:white;padding:20px;text-align:center}
+    .relay{display:inline-block;width:200px;margin:20px;background:#16213e;padding:20px;border-radius:15px}
+    button{width:100%;padding:15px;font-size:18px;border:none;border-radius:10px;cursor:pointer;margin:5px 0}
+    .on{background:#4CAF50;color:white}.off{background:#f44336;color:white}
+  </style>
 </head>
 <body>
-<div class="container">
-<h1>🏠 Smart Switch</h1>
-
-<div class="card">
-  <span>Light 1</span>
-  <div class="switch">
-    <span id="s1" class="status">--</span>
-    <button class="btn-on" onclick="setRelay(1,1)">ON</button>
-    <button class="btn-off" onclick="setRelay(1,0)">OFF</button>
-  </div>
-</div>
-
-<div class="card">
-  <span>Light 2</span>
-  <div class="switch">
-    <span id="s2" class="status">--</span>
-    <button class="btn-on" onclick="setRelay(2,1)">ON</button>
-    <button class="btn-off" onclick="setRelay(2,0)">OFF</button>
-  </div>
-</div>
-
-<div class="card">
-  <span>Motor</span>
-  <div class="switch">
-    <span id="s3" class="status">--</span>
-    <button class="btn-on" onclick="setRelay(3,1)">ON</button>
-    <button class="btn-off" onclick="setRelay(3,0)">OFF</button>
-  </div>
-</div>
-
-<div class="card">
-  <span>Floor Light</span>
-  <div class="switch">
-    <span id="s4" class="status">--</span>
-    <button class="btn-on" onclick="setRelay(4,1)">ON</button>
-    <button class="btn-off" onclick="setRelay(4,0)">OFF</button>
-  </div>
-</div>
-
-<div class="footer">
-Madhav Nandan Singh
-</div>
-</div>
-
-<script>
-function setRelay(ch,state){
-  fetch("/api/set",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ ch, state })
-  });
-}
-
-function refresh(){
-  fetch("/api/state")
-    .then(r=>r.json())
-    .then(d=>{
-      update(1,d.r1);
-      update(2,d.r2);
-      update(3,d.r3);
-      update(4,d.r4);
-    });
-}
-
-function update(ch,val){
-  const el=document.getElementById("s"+ch);
-  el.innerText=val?"ON":"OFF";
-  el.className="status "+(val?"on":"off");
-}
-
-setInterval(refresh,1000);
-refresh();
-</script>
+  <h1>☁️ Cloud Dashboard</h1>
+  
+  <div id="relays"></div>
+  
+  <script>
+    async function updateUI() {
+      const res = await fetch("/api/state");
+      const state = await res.json();
+      
+      let html = "";
+      for(let i=1; i<=4; i++) {
+        const key = "r"+i;
+        const isOn = state[key];
+        html += `
+          <div class="relay">
+            <h2>Relay ${i}</h2>
+            <p>${isOn ? "🟢 ON" : "🔴 OFF"}</p>
+            <button class="off" onclick="toggle(${i})">${isOn ? "Turn OFF" : "Turn ON"}</button>
+          </div>
+        `;
+      }
+      document.getElementById("relays").innerHTML = html;
+    }
+    
+    async function toggle(ch) {
+      await fetch(`/api/toggle/${ch}`);
+      updateUI();
+    }
+    
+    setInterval(updateUI, 1000);
+    updateUI();
+  </script>
 </body>
 </html>
-
